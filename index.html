@@ -129,7 +129,7 @@
   }
   .watch:active{transform:scale(.96)}
   .actions{display:flex;align-items:center;gap:9px}
-  .infobtn{
+  .infobtn,.altbtn{
     width:38px;height:38px;border-radius:50%;flex:0 0 auto;
     display:grid;place-items:center;
     border:1px solid rgba(var(--acc-rgb),.45);background:rgba(var(--acc-rgb),.12);
@@ -137,8 +137,24 @@
     font-style:italic;font-weight:700;font-size:17px;line-height:1;
     cursor:pointer;transition:.2s;
   }
-  .infobtn:hover{background:rgba(var(--acc-rgb),.22);box-shadow:0 0 12px rgba(var(--acc-rgb),.3)}
-  .infobtn:active{transform:scale(.9)}
+  .infobtn:hover,.altbtn:hover{background:rgba(var(--acc-rgb),.22);box-shadow:0 0 12px rgba(var(--acc-rgb),.3)}
+  .infobtn:active,.altbtn:active{transform:scale(.9)}
+  .altbtn{font-family:inherit;font-style:normal;font-size:16px;font-weight:900}
+
+  /* alternatives modal */
+  .altlist{padding:2px 18px 18px}
+  .altgroup h5{margin:12px 0 8px;font-size:13.5px;color:var(--txt-dim);font-weight:800}
+  .altitem{
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    padding:11px 14px;margin-bottom:8px;border-radius:12px;
+    background:rgba(255,255,255,.04);border:1px solid var(--card-border);
+    text-decoration:none;color:var(--txt);transition:.2s;
+  }
+  .altitem:hover{border-color:rgba(var(--acc-rgb),.5);background:rgba(var(--acc-rgb),.08)}
+  .altitem .an{font-weight:700;font-size:14px;direction:ltr}
+  .altitem .anote{font-size:11.5px;color:var(--txt-dim)}
+  .altitem .play{margin-inline-start:auto}
+  .alt-note{margin:10px 0 4px;font-size:11.5px;color:var(--txt-dim);text-align:center}
 
   /* muscle diagram */
   .diagram{
@@ -438,6 +454,18 @@
   </div>
 </div>
 
+<!-- alternatives modal -->
+<div class="modal" id="altmodal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <button class="xbtn" id="altClose">✕</button>
+      <h4 id="altTitle"></h4>
+      <a style="pointer-events:none">⇄ بدائل</a>
+    </div>
+    <div class="altlist" id="altList"></div>
+  </div>
+</div>
+
 <!-- muscle photo lightbox -->
 <div class="photobox" id="photobox">
   <img id="photoboxImg" src="" alt="">
@@ -578,6 +606,8 @@ function renderDay(){
                 <button class="watch" data-vid="${ex.vid}" data-name="${ex.name}">▶ شاهد الطريقة</button>
                 <button class="infobtn" data-photo="photos/action/${ex.img}.jpg" data-name="${ex.name}"
                         title="صورة الأداء" aria-label="صورة الأداء">i</button>
+                <button class="altbtn" data-ex="${ex.id}" data-name="${ex.name}"
+                        title="بدائل التمرين" aria-label="بدائل التمرين">⇄</button>
               </div>
             </div>
             <div class="diagram" style="${muscleStyle(ex)}">
@@ -655,6 +685,10 @@ function renderDay(){
   document.querySelectorAll(".infobtn").forEach(b=>
     b.onclick = ()=> openPhoto(b.dataset.photo, b.dataset.name));
 
+  // ⇄ icon → alternatives popup
+  document.querySelectorAll(".altbtn").forEach(b=>
+    b.onclick = ()=> openAlt(b.dataset.ex, b.dataset.name));
+
   document.getElementById("resetDay").onclick = ()=>{
     setsState[day.id] = { date: today(), ex:{} };
     delete daysDone[day.id];
@@ -694,7 +728,67 @@ function closeVideo(){
 }
 document.getElementById("modalClose").onclick = closeVideo;
 modal.onclick = e=>{ if(e.target===modal) closeVideo(); };
-document.addEventListener("keydown", e=>{ if(e.key==="Escape"){ closeVideo(); photobox.classList.remove("open"); } });
+document.addEventListener("keydown", e=>{ if(e.key==="Escape"){ closeVideo(); photobox.classList.remove("open"); altmodal.classList.remove("open"); } });
+
+/* ================= ALTERNATIVES ================= */
+const YTW = id => `https://www.youtube.com/watch?v=${id}`;
+const YTS = q  => `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
+/* per exercise: db = بديل دمبل, mc = بديل ماكينة/كيبل — [name, url, note] */
+const ALTS = {
+  bench:  {db:[["Flat Dumbbell Press",YTW("o7TvO377OqA"),"نفس الحركة، مدى أعمق"]],
+           mc:[["Chest Press Machine",YTW("Qu7-ceCvq7w"),""],["Smith Bench Press",YTW("gQ3afio08V8"),""]]},
+  ohp:    {db:[["Seated Dumbbell Shoulder Press",YTW("k6tzKisR3NY"),""]],
+           mc:[["Shoulder Press Machine",YTW("6v4nrRVySj0"),""],["Smith OHP",YTS("Smith OHP shorts"),""]]},
+  latr1:  {db:[["Leaning Single-arm Lateral Raise",YTW("p8eMhRdeX4g"),""]],
+           mc:[["Cable Lateral Raise",YTW("lMJUXEvcMkQ"),"توتر ثابت — ممتاز"],["Lateral Raise Machine",YTS("Lateral Raise Machine shorts"),""]]},
+  pushdn: {db:[["Overhead Dumbbell Extension",YTW("b_r_LW4HEcM"),""],["Dumbbell Kickback",YTS("Dumbbell Kickback shorts"),""]],
+           mc:[["Triceps Extension Machine",YTS("Triceps Extension Machine shorts"),""],["Rope Pushdown",YTW("1FjkhpZsaxc"),""]]},
+  pullup: {db:[["Dumbbell Pullover",YTW("Datv2L6t3-4"),"لاتس بمدى طويل"]],
+           mc:[["Assisted Pull-up Machine",YTW("CdO5BvP6Ti8"),""],["Plate-loaded Pulldown",YTS("Plate-loaded Pulldown shorts"),""]]},
+  csrow:  {db:[["Chest-Supported DB Row",YTW("czoQ_ncuqqI"),"على بنش مائل — الأقرب للأساسي"]],
+           mc:[["Seated Cable Row",YTW("qD1WZ5pSuvk"),""],["Machine Row (Hammer Strength)",YTS("Hammer Strength Machine Row shorts"),""]]},
+  salpd:  {db:[["Single-arm Dumbbell Row",YTW("yHqqGd0tXcw"),"الكوع باتجاه الحوض، نفس القاعدة"]],
+           mc:[["Machine Pullover",YTS("Machine Pullover shorts"),""],["Single-arm Seated Row",YTS("Single-arm Seated Row shorts"),""]]},
+  rdfly:  {db:[["Bent-over Reverse Fly",YTW("xvEkgGUrGPM"),"بالدمبل"]],
+           mc:[["Reverse Pec Deck",YTW("-TKqxK7-ehc"),"أسهل ضبط"],["Cable Rear Delt Fly",YTS("Cable Rear Delt Fly shorts"),""]]},
+  curl:   {db:[["Alternating DB Curl",YTS("Alternating DB Curl shorts"),""],["Incline DB Curl",YTW("fXFN8_1Bh6k"),"مدّ أعمق"]],
+           mc:[["Cable Curl",YTW("CrbTqNOlFgE"),"بالبار"],["Preacher Curl Machine",YTS("Preacher Curl Machine shorts"),""]]},
+  squat:  {db:[["Goblet Squat",YTW("lRYBbchqxtI"),""],["DB Bulgarian Split Squat",YTW("uBSoEWZu07k"),""]],
+           mc:[["Hack Squat",YTW("g9i05umL5vc"),""],["Smith Squat",YTS("Smith Squat shorts"),""]]},
+  rdl:    {db:[["Dumbbell RDL",YTW("oQwnGfZFfzw"),"نفس الحركة تماماً"]],
+           mc:[["Lying/Seated Leg Curl",YTW("_lgE0gPvbik"),""],["45° Back Extension",YTS("45 degree Back Extension shorts"),""]]},
+  legpr:  {db:[["DB Walking Lunges",YTW("mJilHWIBWO8"),""],["Goblet Squat",YTW("lRYBbchqxtI"),""]],
+           mc:[["Hack Squat",YTW("g9i05umL5vc"),""],["V-Squat Machine",YTS("V-Squat Machine shorts"),""]]},
+  calf:   {db:[["Single-leg DB Calf Raise",YTW("fOfPwmb5FXU"),"على درجة"]],
+           mc:[["Seated Calf Machine",YTS("Seated Calf Machine shorts"),""],["Calf Press على Leg Press",YTS("Leg Press Calf Raise shorts"),""]]},
+  incl:   {db:[["Incline Dumbbell Press",YTW("8fXfwG4ftaQ"),"30-45°"]],
+           mc:[["Incline Chest Press Machine",YTS("Incline Chest Press Machine shorts"),""],["Smith Incline",YTS("Smith Machine Incline Press shorts"),""]]},
+  lpwide: {db:[["Dumbbell Pullover",YTW("Datv2L6t3-4"),""]],
+           mc:[["Assisted Pull-up Machine",YTW("CdO5BvP6Ti8"),"قبضة واسعة"]]},
+  facep:  {db:[["Bent-over Reverse Fly",YTW("xvEkgGUrGPM"),"مع سحبة للوجه"]],
+           mc:[["Reverse Pec Deck",YTW("-TKqxK7-ehc"),"قبضة محايدة"]]},
+  hammer: {db:[["Cross-body Hammer Curl",YTW("qmQkt1Y-FX8"),""]],
+           mc:[["Rope Hammer Curl",YTW("YC9QZiti-40"),"على الكيبل"]]},
+};
+ALTS.latr2 = ALTS.latr1;
+
+const altmodal = document.getElementById("altmodal");
+function openAlt(exId, name){
+  const a = ALTS[exId];
+  if(!a) return;
+  const sect = (emo, title, arr)=> !arr||!arr.length ? "" :
+    `<div class="altgroup"><h5>${emo} ${title}</h5>${arr.map(([n,u,note])=>
+      `<a class="altitem" href="${u}" target="_blank" rel="noopener">
+         <span class="an">${n}</span>${note?`<span class="anote">${note}</span>`:""}
+         <span class="play">🎥</span></a>`).join("")}</div>`;
+  document.getElementById("altList").innerHTML =
+    sect("🏋️","بديل دمبل",a.db) + sect("⚙️","بديل ماكينة / كيبل",a.mc) +
+    `<p class="alt-note">نفس الـ sets × reps ونفس الراحة — سجّل وزن البديل منفصل</p>`;
+  document.getElementById("altTitle").textContent = name;
+  altmodal.classList.add("open");
+}
+document.getElementById("altClose").onclick = ()=> altmodal.classList.remove("open");
+altmodal.onclick = e=>{ if(e.target===altmodal) altmodal.classList.remove("open"); };
 
 /* ================= PHOTO LIGHTBOX ================= */
 const photobox = document.getElementById("photobox");
