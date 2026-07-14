@@ -129,20 +129,44 @@
   }
   .watch:active{transform:scale(.96)}
 
-  /* muscle diagram */
+  /* ===== action-photo banner ===== */
+  .banner{
+    position:relative;height:158px;
+    margin:-16px -16px -46px;
+    overflow:hidden;cursor:zoom-in;
+  }
+  .banner img{
+    width:100%;height:100%;object-fit:cover;object-position:center 20%;
+    display:block;transition:transform .8s cubic-bezier(.2,.8,.3,1);
+    -webkit-mask-image:linear-gradient(to bottom,#000 45%,transparent 98%);
+            mask-image:linear-gradient(to bottom,#000 45%,transparent 98%);
+  }
+  .card:hover .banner img{transform:scale(1.07)}
+  .banner::after{  /* per-day accent tint */
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(to bottom, rgba(var(--acc-rgb),.16), transparent 75%);
+  }
+  .banner .target-chip{
+    position:absolute;top:10px;inset-inline-start:10px;z-index:2;
+    font-size:11px;font-weight:700;padding:4px 11px;border-radius:999px;
+    background:rgba(5,7,10,.55);backdrop-filter:blur(6px);
+    border:1px solid rgba(var(--acc-rgb),.45);color:var(--acc);
+    pointer-events:none;
+  }
+  .card .card-top{position:relative;z-index:1}
+  .info h3, .badges{text-shadow:0 2px 12px rgba(5,7,10,.85)}
+
+  /* SVG body-map fallback (shown only if the banner photo fails to load) */
   .diagram{
-    flex:0 0 128px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    flex:0 0 128px;display:none;align-items:center;justify-content:center;
     background:rgba(0,0,0,.25);border:1px solid var(--card-border);
     border-radius:14px;padding:5px;overflow:hidden;
   }
-  .diagram svg{width:112px;height:auto;display:none}
-  .diagram .mphoto{
-    width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;display:block;
-    cursor:zoom-in;transition:transform .3s;
-  }
-  .diagram .mphoto:hover{transform:scale(1.04)}
-  .diagram.nofoto .mphoto{display:none}
-  .diagram.nofoto svg{display:block}
+  .diagram svg{width:112px;height:auto;display:block}
+  .card.nofoto .banner{display:none}
+  .card.nofoto .card-top{margin-top:0}
+  .card.nofoto .diagram{display:flex}
+  .card.nofoto .info h3, .card.nofoto .badges{text-shadow:none}
 
   /* photo lightbox */
   .photobox{
@@ -554,6 +578,11 @@ function renderDay(){
         const last = w[w.length-1];
         return `
         <article class="card" style="--i:${i}">
+          <div class="banner" data-anat="photos/${ex.img}.jpg" data-name="${ex.name}">
+            <img src="photos/action/${ex.img}.jpg" alt="${ex.name}" loading="lazy"
+                 onerror="this.closest('.card').classList.add('nofoto')">
+            <span class="target-chip">🎯 اضغط لعرض العضلات</span>
+          </div>
           <div class="card-top">
             <div class="info">
               <h3>${ex.name}</h3>
@@ -566,9 +595,6 @@ function renderDay(){
               <button class="watch" data-vid="${ex.vid}" data-name="${ex.name}">▶ شاهد الطريقة</button>
             </div>
             <div class="diagram" style="${muscleStyle(ex)}">
-              <img class="mphoto" src="photos/${ex.img}.jpg" alt="العضلات المستهدفة: ${ex.p.map(m=>MUSCLES[m]).join(", ")}"
-                   loading="lazy" data-name="${ex.name}"
-                   onerror="this.parentElement.classList.add('nofoto')">
               <svg viewBox="0 0 220 260"><use href="#bodymap"/></svg>
             </div>
           </div>
@@ -632,9 +658,9 @@ function renderDay(){
   document.querySelectorAll(".watch").forEach(b=>
     b.onclick = ()=> openVideo(b.dataset.vid, b.dataset.name));
 
-  // muscle photo lightbox
-  document.querySelectorAll(".mphoto").forEach(img=>
-    img.onclick = ()=> openPhoto(img.src, img.dataset.name));
+  // banner tap → anatomy image in lightbox
+  document.querySelectorAll(".banner").forEach(b=>
+    b.onclick = ()=> openPhoto(b.dataset.anat, b.dataset.name));
 
   document.getElementById("resetDay").onclick = ()=>{
     setsState[day.id] = { date: today(), ex:{} };
