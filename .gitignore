@@ -1,2 +1,5 @@
 .env
 .DS_Store
+# action photos kept locally only (not used by the site for now)
+photos/action/
+photos/originals/action/
