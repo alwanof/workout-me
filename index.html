@@ -128,6 +128,17 @@
     cursor:pointer;transition:.2s;box-shadow:0 4px 16px rgba(var(--acc-rgb),.3);
   }
   .watch:active{transform:scale(.96)}
+  .actions{display:flex;align-items:center;gap:9px}
+  .infobtn{
+    width:38px;height:38px;border-radius:50%;flex:0 0 auto;
+    display:grid;place-items:center;
+    border:1px solid rgba(var(--acc-rgb),.45);background:rgba(var(--acc-rgb),.12);
+    color:var(--acc);font-family:Georgia,"Times New Roman",serif;
+    font-style:italic;font-weight:700;font-size:17px;line-height:1;
+    cursor:pointer;transition:.2s;
+  }
+  .infobtn:hover{background:rgba(var(--acc-rgb),.22);box-shadow:0 0 12px rgba(var(--acc-rgb),.3)}
+  .infobtn:active{transform:scale(.9)}
 
   /* muscle diagram */
   .diagram{
@@ -563,7 +574,11 @@ function renderDay(){
                 <span class="badge rest">⏱ راحة ${ex.restTxt}</span>
               </div>
               <div class="mtags">🎯 <b>${ex.p.map(m=>MUSCLES[m]).join(" · ")}</b>${ex.s.length?` <span dir="rtl">+ ${ex.s.map(m=>MUSCLES[m]).join(" · ")}</span>`:""}</div>
-              <button class="watch" data-vid="${ex.vid}" data-name="${ex.name}">▶ شاهد الطريقة</button>
+              <div class="actions">
+                <button class="watch" data-vid="${ex.vid}" data-name="${ex.name}">▶ شاهد الطريقة</button>
+                <button class="infobtn" data-photo="photos/action/${ex.img}.jpg" data-name="${ex.name}"
+                        title="صورة الأداء" aria-label="صورة الأداء">i</button>
+              </div>
             </div>
             <div class="diagram" style="${muscleStyle(ex)}">
               <img class="mphoto" src="photos/thumbs/${ex.img}.jpg" alt="العضلات المستهدفة: ${ex.p.map(m=>MUSCLES[m]).join(", ")}"
@@ -635,6 +650,10 @@ function renderDay(){
   // muscle photo lightbox (thumb on card, full-size on zoom)
   document.querySelectorAll(".mphoto").forEach(img=>
     img.onclick = ()=> openPhoto(img.dataset.full, img.dataset.name));
+
+  // info icon → action photo popup
+  document.querySelectorAll(".infobtn").forEach(b=>
+    b.onclick = ()=> openPhoto(b.dataset.photo, b.dataset.name));
 
   document.getElementById("resetDay").onclick = ()=>{
     setsState[day.id] = { date: today(), ex:{} };
