@@ -230,14 +230,14 @@
   }
 
   /* day complete banner + reset */
-  .banner{
+  .day-banner{
     display:none;margin-top:16px;padding:16px;text-align:center;
     border-radius:var(--radius);font-weight:900;font-size:17px;
     background:linear-gradient(135deg,rgba(var(--acc-rgb),.25),rgba(var(--acc-rgb),.08));
     border:1px solid rgba(var(--acc-rgb),.4);color:var(--acc);
     animation:pop .5s both;
   }
-  .banner.show{display:block}
+  .day-banner.show{display:block}
   .dayfoot{display:flex;justify-content:center;margin-top:16px}
   .resetday{
     background:transparent;border:1px solid var(--card-border);color:var(--txt-dim);
@@ -612,7 +612,7 @@ function renderDay(){
         </article>`;
       }).join("")}
     </div>
-    <div class="banner" id="dayBanner">🔥 اكتملت جلسة ${day.name} — عاش يا وحش! لا تنسى ٢٠ دقيقة تريدميل</div>
+    <div class="day-banner" id="dayBanner">🔥 اكتملت جلسة ${day.name} — عاش يا وحش! لا تنسى ٢٠ دقيقة تريدميل</div>
     <div class="dayfoot"><button class="resetday" id="resetDay">↺ تصفير عدّات اليوم</button></div>`;
 
   // set buttons
